@@ -38,10 +38,13 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 _moveDirection;
     private bool _isGrounded;
     private bool _jumpQueued = false;
+    
+    private Animator animator;
 
     void Start()
     {
         _rb = GetComponent<Rigidbody>();
+        animator = GetComponent<Animator>();
     }
     
     void Awake() 
@@ -61,6 +64,8 @@ public class PlayerMovement : MonoBehaviour
         Vector3 camRight = Camera.main.transform.right;
 
         _moveDirection = (vertical * camForward + horizontal * camRight).normalized;
+        animator.SetFloat("currentSpeed", _moveDirection.magnitude);
+        
 
         // 3. LÓGICA DE CORRER Y STAMINA
         bool isRunningInput = Input.GetKey(KeyCode.LeftControl); // Control para correr 
@@ -84,16 +89,17 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // 5. MOVIMIENTO FÍSICO (FixedUpdate es como el loop de un servidor: tiempo constante)
+        // 5. MOVIMIENTO FÍSICO 
         if (_moveDirection.magnitude >= 0.1f)
         {
             // Determinar velocidad actual
             bool isRunning = Input.GetKey(KeyCode.LeftControl) && stats.currentStamina > 0;
+            animator.SetBool("isRunning", isRunning);
             float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
             // ROTACIÓN: Se orienta hacia donde camina (puedes verle la cara si pulsas S) 
             Quaternion targetRotation = Quaternion.LookRotation(_moveDirection);
-            _rb.rotation = Quaternion.Slerp(_rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+            _rb.rotation = Quaternion.Lerp(_rb.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
 
             // MOVIMIENTO: Aplicamos posición física para que choque con paredes
             Vector3 move = _moveDirection * (currentSpeed * Time.fixedDeltaTime);
